@@ -25,7 +25,12 @@ add_library(${PROJECT_NAME}
     ${PROJECT_SOURCES}
 )
 
-target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Concurrent)
+target_link_libraries(${PROJECT_NAME}
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Network
+    Qt${QT_VERSION_MAJOR}::Concurrent
+    QOpenAI
+)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     TESTTOOL_LIBRARY

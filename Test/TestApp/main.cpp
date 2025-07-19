@@ -8,10 +8,6 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    QString token = "";
-    QString api_base_url = "";
-    QOpenAI ai(token, "QOpenAI", api_base_url);
-
     QVariantMap request{
         { "model", "Qwen/Qwen3-8B" },
 
@@ -53,7 +49,7 @@ Focus on being reliable, empathetic, and professional in all interactions.
 
         qDebug().noquote() << "Please wait...";
 
-        QVariantMap response = ai.chat.create(request);
+        QVariantMap response = aiInstance()->chat.create(request);
         QVariantList choices = response["choices"].toList();
         for (const auto &choice : choices) {
             QVariantMap msg = choice.toMap()["message"].toMap();
