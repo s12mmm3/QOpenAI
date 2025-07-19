@@ -1,5 +1,7 @@
 #include "qopenai.h"
 
+#include <QFileInfo>
+
 QOpenAI::QOpenAI(const QString &token, const QString &organization, const QString &api_base_url, const QString &beta)
     : token_{token}, organization_{organization}
 {
@@ -59,7 +61,15 @@ QVariantMap QOpenAI::makeRequest(const QString &suffix, const QString &data, con
     {
         request.setRawHeader("OpenAI-Beta", beta_.toUtf8());
     }
-    QNetworkReply *reply = manager->post(request, data.toUtf8());
+    QNetworkReply *reply;
+    if (contentType != "multipart/form-data")
+    {
+        reply = manager->post(request, data.toUtf8());
+    }
+    else
+    {
+        reply = manager->get(request);
+    }
     QEventLoop loop;
     QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
     loop.exec();
@@ -75,6 +85,11 @@ QVariantMap QOpenAI::post(const QString &suffix, const QString &data, const QStr
     return makeRequest(suffix, data, contentType);
 }
 
+QVariantMap QOpenAI::get(const QString &suffix, const QString &data)
+{
+    return makeRequest(suffix, data);
+}
+
 QVariantMap QOpenAI::post(const QString &suffix, const QVariantMap &json, const QString &contentType)
 {
     return post(suffix, QJsonDocument::fromVariant(json).toJson(), contentType);
@@ -88,4 +103,29 @@ QVariantMap CategoryCompletion::create(QVariantMap input)
 QVariantMap CategoryChat::create(QVariantMap input)
 {
     return openai_.post("chat/completions", input);
+}
+
+QVariantMap CategoryModel::list()
+{
+    return openai_.get("models");
+}
+
+QVariantMap CategoryModel::retrieve(const QString &model)
+{
+    return openai_.get("models/" + model);
+}
+
+QVariantMap CategoryImage::create(QVariantMap input)
+{
+    return openai_.post("images/generations", input);
+}
+
+QVariantMap CategoryImage::edit(QVariantMap input)
+{
+    return {};
+}
+
+QVariantMap CategoryImage::variation(QVariantMap input)
+{
+    return {};
 }

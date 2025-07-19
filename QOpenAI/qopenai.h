@@ -21,6 +21,17 @@
 
 class QOpenAI;
 
+// https://platform.openai.com/docs/api-reference/models
+// List and describe the various models available in the API. You can refer to the Models documentation to understand what models are available and the differences between them.
+struct QOPENAI_EXPORT CategoryModel {
+    QVariantMap list();
+    QVariantMap retrieve(const QString& model);
+
+    CategoryModel(QOpenAI& openai) : openai_{openai} {}
+private:
+    QOpenAI& openai_;
+};
+
 // https://platform.openai.com/docs/api-reference/completions
 // Given a prompt, the model will return one or more predicted completions, and can also return the probabilities of alternative tokens at each position.
 struct QOPENAI_EXPORT CategoryCompletion {
@@ -43,6 +54,20 @@ private:
     QOpenAI& openai_;
 };
 
+
+// https://platform.openai.com/docs/api-reference/images
+// Given a prompt and/or an input image, the model will generate a new image.
+struct QOPENAI_EXPORT CategoryImage {
+    QVariantMap create(QVariantMap input);
+    QVariantMap edit(QVariantMap input);
+    QVariantMap variation(QVariantMap input);
+
+    CategoryImage(QOpenAI& openai) : openai_{openai} {}
+
+private:
+    QOpenAI& openai_;
+};
+
 // QOpenAI
 class QOPENAI_EXPORT QOpenAI {
 public:
@@ -54,14 +79,18 @@ public:
 
     void setBeta(const QString& beta);
 
-    QVariantMap makeRequest(const QString& suffix, const QString& data, const QString& contentType);
+    QVariantMap makeRequest(const QString& suffix, const QString& data, const QString& contentType = "");
 
     QVariantMap post(const QString& suffix, const QString& data, const QString& contentType);
+
+    QVariantMap get(const QString& suffix, const QString& data = "");
 
     QVariantMap post(const QString& suffix, const QVariantMap& json, const QString& contentType = "application/json");
 
 public:
+    CategoryModel           model     {*this};
     CategoryCompletion      completion{*this};
+    CategoryImage           image     {*this};
     CategoryChat            chat      {*this};
 
 private:
