@@ -2,35 +2,46 @@
 
 #include <QFileInfo>
 
-QHttpPart createFileHttpPart(const QString& filePath)
-{
+QHttpPart createFileHttpPart(const QString& name, const QString& filePath) {
     QFile file(filePath);
     file.open(QIODevice::ReadOnly);
     QHttpPart filePart;
     filePart.setHeader(QNetworkRequest::ContentDispositionHeader,
-                       QVariant("form-data; name=\"file\"; filename=\"" + QFileInfo(filePath).fileName() + "\""));
+                       QVariant("form-data; name=\"" + name + "\"; filename=\"" + QFileInfo(filePath).fileName() + "\""));
     filePart.setBody(file.readAll());
     return filePart;
+}
+
+QHttpPart createTextHttpPart(const QString& name, const QString& value) {
+    QHttpPart textPart;
+    textPart.setHeader(QNetworkRequest::ContentDispositionHeader,
+                       QVariant("form-data; name=\"" + name + "\""));
+    textPart.setBody(value.toUtf8());
+    return textPart;
 }
 
 QOpenAI::QOpenAI(const QString &token, const QString &organization, const QString &api_base_url, const QString &beta)
     : token_{token}, organization_{organization}
 {
     manager = new QNetworkAccessManager;
-    if (token.isEmpty()) {
-        if (const char* env_p = qgetenv("OPENAI_API_KEY")) {
+    if (token.isEmpty())
+    {
+        if (const char* env_p = qgetenv("OPENAI_API_KEY"))
+        {
             token_ = env_p;
         }
     }
     if (api_base_url.isEmpty()) {
-        if(const char* env_p = qgetenv("OPENAI_API_BASE")) {
+        if (const char* env_p = qgetenv("OPENAI_API_BASE")) {
             base_url = QString(env_p) + "/";
         }
-        else {
+        else
+        {
             base_url = "https://api.openai.com/v1/";
         }
     }
-    else {
+    else
+    {
         base_url = api_base_url;
     }
     setUrl(base_url);
@@ -96,27 +107,52 @@ QVariantMap CategoryImage::create(QVariantMap input)
 
 QVariantMap CategoryImage::edit(QVariantMap input)
 {
-    return {};
+    QHttpMultiPart multipart(QHttpMultiPart::FormDataType);
+
+    QString imagePath = input["image"].toString();
+    multipart.append(createFileHttpPart("image", imagePath));
+
+    if (input.contains("mask") && !input["mask"].toString().isEmpty()) {
+        multipart.append(createFileHttpPart("mask", input["mask"].toString()));
+    }
+
+    const QStringList params = {"prompt", "n", "size", "response_format", "user"};
+    for (const QString &key : params) {
+        if (input.contains(key)) {
+            multipart.append(createTextHttpPart(key, input[key].toString()));
+        }
+    }
+
+    return openai_.makeRequest("images/edits", &multipart);
 }
 
 QVariantMap CategoryImage::variation(QVariantMap input)
 {
-    return {};
+    QHttpMultiPart multipart(QHttpMultiPart::FormDataType);
+
+    QString imagePath = input["image"].toString();
+    multipart.append(createFileHttpPart("image", imagePath));
+
+    const QStringList params = {"n", "size", "response_format", "user"};
+    for (const QString &key : params) {
+        if (input.contains(key)) {
+            multipart.append(createTextHttpPart(key, input[key].toString()));
+        }
+    }
+
+    return openai_.makeRequest("images/variations", &multipart);
 }
 
 QVariantMap CategoryAudio::transcribe(QVariantMap input) {
     QHttpMultiPart multipart(QHttpMultiPart::FormDataType);
 
-    multipart.append(createFileHttpPart(input["file"].toString()));
+    multipart.append(createFileHttpPart("file", input["file"].toString()));
 
     const QStringList params = { "model", "language", "prompt", "response_format", "temperature" };
     for (const QString &key : params) {
-        if (!input.contains(key)) continue;
-        QHttpPart textPart;
-        textPart.setHeader(QNetworkRequest::ContentDispositionHeader,
-                           QVariant("form-data; name=\"" + key + "\""));
-        textPart.setBody(input[key].toString().toUtf8());
-        multipart.append(textPart);
+        if (input.contains(key)) {
+            multipart.append(createTextHttpPart(key, input[key].toString()));
+        }
     }
 
     return openai_.makeRequest("audio/transcriptions", &multipart, "");
@@ -125,16 +161,13 @@ QVariantMap CategoryAudio::transcribe(QVariantMap input) {
 QVariantMap CategoryAudio::translate(QVariantMap input) {
     QHttpMultiPart multipart(QHttpMultiPart::FormDataType);
 
-    multipart.append(createFileHttpPart(input["file"].toString()));
+    multipart.append(createFileHttpPart("file", input["file"].toString()));
 
     const QStringList params = { "model", "prompt", "response_format", "temperature" };
     for (const QString &key : params) {
-        if (!input.contains(key)) continue;
-        QHttpPart textPart;
-        textPart.setHeader(QNetworkRequest::ContentDispositionHeader,
-                           QVariant("form-data; name=\"" + key + "\""));
-        textPart.setBody(input[key].toString().toUtf8());
-        multipart.append(textPart);
+        if (input.contains(key)) {
+            multipart.append(createTextHttpPart(key, input[key].toString()));
+        }
     }
 
     return openai_.makeRequest("audio/translations", &multipart, "");
