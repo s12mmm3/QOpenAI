@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
         { "n", 1 },
         { "size", "1024x1024" },
     });
-    qDebug().noquote() << "Please input:" << QJsonDocument::fromVariant(response).toJson();
+    qDebug().noquote() << QJsonDocument::fromVariant(response).toJson();
 
     return a.exec();
 }

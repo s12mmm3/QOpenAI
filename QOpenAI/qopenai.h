@@ -18,6 +18,7 @@
 #include <QMutex>
 #include <QTimer>
 #include <QNetworkProxy>
+#include <QHttpMultiPart>
 
 class QOpenAI;
 
@@ -54,6 +55,18 @@ private:
     QOpenAI& openai_;
 };
 
+// https://platform.openai.com/docs/api-reference/audio
+// Learn how to turn audio into text.
+struct QOPENAI_EXPORT CategoryAudio {
+    QVariantMap transcribe(QVariantMap input);
+    QVariantMap translate(QVariantMap input);
+
+    CategoryAudio(QOpenAI& openai) : openai_{openai} {}
+
+private:
+    QOpenAI& openai_;
+};
+
 
 // https://platform.openai.com/docs/api-reference/images
 // Given a prompt and/or an input image, the model will generate a new image.
@@ -79,7 +92,34 @@ public:
 
     void setBeta(const QString& beta);
 
-    QVariantMap makeRequest(const QString& suffix, const QString& data, const QString& contentType = "");
+    template<typename T>
+    QVariantMap makeRequest(const QString& suffix, const T& data, const QString& contentType = "")
+    {
+        auto complete_url = base_url + suffix;
+        QNetworkRequest request(complete_url);
+        if (!contentType.isEmpty())
+        {
+            request.setHeader(QNetworkRequest::ContentTypeHeader, contentType);
+        }
+        request.setRawHeader("Authorization", "Bearer " + token_.toUtf8());
+        if (!organization_.isEmpty())
+        {
+            request.setRawHeader("OpenAI-Organization", organization_.toUtf8());
+        }
+        if (!beta_.isEmpty())
+        {
+            request.setRawHeader("OpenAI-Beta", beta_.toUtf8());
+        }
+        QNetworkReply *reply = manager->post(request, data);
+        QEventLoop loop;
+        QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        loop.exec();
+
+        QByteArray response = reply->readAll();
+        QJsonDocument json = QJsonDocument::fromJson(response);
+        reply->deleteLater();
+        return json.toVariant().toMap();
+    }
 
     QVariantMap post(const QString& suffix, const QString& data, const QString& contentType);
 
@@ -92,6 +132,7 @@ public:
     CategoryCompletion      completion{*this};
     CategoryImage           image     {*this};
     CategoryChat            chat      {*this};
+    CategoryAudio           audio     {*this};
 
 private:
     QNetworkAccessManager *manager;

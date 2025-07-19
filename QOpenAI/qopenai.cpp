@@ -2,6 +2,17 @@
 
 #include <QFileInfo>
 
+QHttpPart createFileHttpPart(const QString& filePath)
+{
+    QFile file(filePath);
+    file.open(QIODevice::ReadOnly);
+    QHttpPart filePart;
+    filePart.setHeader(QNetworkRequest::ContentDispositionHeader,
+                       QVariant("form-data; name=\"file\"; filename=\"" + QFileInfo(filePath).fileName() + "\""));
+    filePart.setBody(file.readAll());
+    return filePart;
+}
+
 QOpenAI::QOpenAI(const QString &token, const QString &organization, const QString &api_base_url, const QString &beta)
     : token_{token}, organization_{organization}
 {
@@ -43,51 +54,14 @@ void QOpenAI::setBeta(const QString &beta)
     beta_ = beta;
 }
 
-QVariantMap QOpenAI::makeRequest(const QString &suffix, const QString &data, const QString &contentType)
-{
-    auto complete_url = base_url + suffix;
-
-    QNetworkRequest request(complete_url);
-    if (!contentType.isEmpty())
-    {
-        request.setHeader(QNetworkRequest::ContentTypeHeader, contentType);
-    }
-    request.setRawHeader("Authorization", "Bearer " + token_.toUtf8());
-    if (!organization_.isEmpty())
-    {
-        request.setRawHeader("OpenAI-Organization", organization_.toUtf8());
-    }
-    if (!beta_.isEmpty())
-    {
-        request.setRawHeader("OpenAI-Beta", beta_.toUtf8());
-    }
-    QNetworkReply *reply;
-    if (contentType != "multipart/form-data")
-    {
-        reply = manager->post(request, data.toUtf8());
-    }
-    else
-    {
-        reply = manager->get(request);
-    }
-    QEventLoop loop;
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    loop.exec();
-
-    QByteArray response = reply->readAll();
-    QJsonDocument json = QJsonDocument::fromJson(response);
-    reply->deleteLater();
-    return json.toVariant().toMap();
-}
-
 QVariantMap QOpenAI::post(const QString &suffix, const QString &data, const QString &contentType)
 {
-    return makeRequest(suffix, data, contentType);
+    return makeRequest(suffix, data.toUtf8(), contentType);
 }
 
 QVariantMap QOpenAI::get(const QString &suffix, const QString &data)
 {
-    return makeRequest(suffix, data);
+    return makeRequest(suffix, data.toUtf8());
 }
 
 QVariantMap QOpenAI::post(const QString &suffix, const QVariantMap &json, const QString &contentType)
@@ -128,4 +102,40 @@ QVariantMap CategoryImage::edit(QVariantMap input)
 QVariantMap CategoryImage::variation(QVariantMap input)
 {
     return {};
+}
+
+QVariantMap CategoryAudio::transcribe(QVariantMap input) {
+    QHttpMultiPart multipart(QHttpMultiPart::FormDataType);
+
+    multipart.append(createFileHttpPart(input["file"].toString()));
+
+    const QStringList params = { "model", "language", "prompt", "response_format", "temperature" };
+    for (const QString &key : params) {
+        if (!input.contains(key)) continue;
+        QHttpPart textPart;
+        textPart.setHeader(QNetworkRequest::ContentDispositionHeader,
+                           QVariant("form-data; name=\"" + key + "\""));
+        textPart.setBody(input[key].toString().toUtf8());
+        multipart.append(textPart);
+    }
+
+    return openai_.makeRequest("audio/transcriptions", &multipart, "");
+}
+
+QVariantMap CategoryAudio::translate(QVariantMap input) {
+    QHttpMultiPart multipart(QHttpMultiPart::FormDataType);
+
+    multipart.append(createFileHttpPart(input["file"].toString()));
+
+    const QStringList params = { "model", "prompt", "response_format", "temperature" };
+    for (const QString &key : params) {
+        if (!input.contains(key)) continue;
+        QHttpPart textPart;
+        textPart.setHeader(QNetworkRequest::ContentDispositionHeader,
+                           QVariant("form-data; name=\"" + key + "\""));
+        textPart.setBody(input[key].toString().toUtf8());
+        multipart.append(textPart);
+    }
+
+    return openai_.makeRequest("audio/translations", &multipart, "");
 }

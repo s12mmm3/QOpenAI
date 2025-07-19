@@ -44,6 +44,7 @@ endfunction()
 set(test_name_list
     chat
     image
+    audio
 )
 
 foreach(test_name IN LISTS test_name_list)
