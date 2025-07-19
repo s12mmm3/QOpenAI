@@ -13,7 +13,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network Gui)
 
 FILE(GLOB HEADERS ./*.h ./util/*.h)
 FILE(GLOB SOURCES ./*.cpp ./util/*.cpp)
-add_library(${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME}
     ${HEADERS}
     ${SOURCES}
 )
