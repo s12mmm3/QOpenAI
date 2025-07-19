@@ -3,9 +3,6 @@
 
 #include "qopenai.h"
 
-#include <QObject>
-#include <QJsonDocument>
-
 QOpenAI* aiInstance();
 
 #endif // TESTTOOL_H

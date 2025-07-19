@@ -1,6 +1,6 @@
 #include "testtool.h"
 
-#include <QFile>
+#include <QGlobalStatic>
 
 const static QString token = "";
 const static QString api_base_url = "";
