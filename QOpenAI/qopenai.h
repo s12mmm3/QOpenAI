@@ -86,8 +86,6 @@ class QOPENAI_EXPORT QOpenAI {
 public:
     QOpenAI(const QString& token = "", const QString& organization = "", const QString& api_base_url = "", const QString& beta = "");
 
-    void setUrl(const QString& url);
-
     void setToken(const QString& token, const QString& organization);
 
     void setBeta(const QString& beta);
@@ -99,7 +97,7 @@ public:
                             QNetworkAccessManager::Operation method = QNetworkAccessManager::PostOperation
                             )
     {
-        auto complete_url = base_url + suffix;
+        auto complete_url = base_url + "/" + suffix;
         QNetworkRequest request(complete_url);
         if (!contentType.isEmpty())
         {

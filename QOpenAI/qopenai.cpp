@@ -33,25 +33,24 @@ QOpenAI::QOpenAI(const QString &token, const QString &organization, const QStrin
     }
     if (api_base_url.isEmpty()) {
         if (const char* env_p = qgetenv("OPENAI_API_BASE")) {
-            base_url = QString(env_p) + "/";
+            base_url = QString(env_p);
         }
         else
         {
-            base_url = "https://api.openai.com/v1/";
+            base_url = "https://api.openai.com/v1";
         }
     }
     else
     {
         base_url = api_base_url;
     }
-    setUrl(base_url);
+    // Ensure base_url doesn't end with a slash
+    while (base_url.endsWith('/')) {
+        base_url.chop(1);
+    }
+
     setToken(token_, organization_);
     setBeta(beta);
-}
-
-void QOpenAI::setUrl(const QString &url)
-{
-    url_ = url;
 }
 
 void QOpenAI::setToken(const QString &token, const QString &organization)
