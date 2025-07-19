@@ -59,6 +59,23 @@ void QOpenAI::setToken(const QString &token, const QString &organization)
     organization_ = organization;
 }
 
+void QOpenAI::setProxy(const QString &proxy)
+{
+    proxy_url_ = proxy;
+
+    {
+        QUrl purl(proxy_url_);
+        if (purl.host().isEmpty()) return;
+
+        QNetworkProxy proxy = QNetworkProxy::NoProxy;
+        proxy.setType(QNetworkProxy::HttpProxy);
+        proxy.setHostName(purl.host());
+        proxy.setPort(purl.port(80));
+
+        manager->setProxy(proxy);
+    }
+}
+
 void QOpenAI::setBeta(const QString &beta)
 {
     beta_ = beta;
@@ -77,6 +94,16 @@ QVariantMap QOpenAI::get(const QString &suffix, const QString &data)
 QVariantMap QOpenAI::post(const QString &suffix, const QVariantMap &json, const QString &contentType)
 {
     return post(suffix, QJsonDocument::fromVariant(json).toJson(), contentType);
+}
+
+void QOpenAI::setBaseUrl(const QString &url)
+{
+    base_url = url;
+}
+
+QString QOpenAI::getBaseUrl() const
+{
+    return base_url;
 }
 
 QVariantMap CategoryCompletion::create(QVariantMap input)

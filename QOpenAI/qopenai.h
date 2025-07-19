@@ -3,22 +3,22 @@
 
 #include "QOpenAI_global.h"
 
-#include <QObject>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
 #include <QDebug>
 #include <QEventLoop>
-#include <QUrlQuery>
-#include <QUrl>
-#include <QThread>
-#include <QMutex>
-#include <QTimer>
-#include <QNetworkProxy>
+#include <QFile>
 #include <QHttpMultiPart>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMutex>
+#include <QNetworkAccessManager>
+#include <QNetworkProxy>
+#include <QNetworkReply>
+#include <QObject>
+#include <QThread>
+#include <QTimer>
+#include <QUrl>
+#include <QUrlQuery>
 
 class QOpenAI;
 
@@ -88,6 +88,8 @@ public:
 
     void setToken(const QString& token, const QString& organization);
 
+    void setProxy(const QString& proxy);
+
     void setBeta(const QString& beta);
 
     template<typename T>
@@ -134,6 +136,10 @@ public:
     QVariantMap get(const QString& suffix, const QString& data = "");
 
     QVariantMap post(const QString& suffix, const QVariantMap& json, const QString& contentType = "application/json");
+
+    void setBaseUrl(const QString &url);
+
+    QString getBaseUrl() const;
 
 public:
     CategoryModel           model     {*this};
