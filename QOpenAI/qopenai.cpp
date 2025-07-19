@@ -72,7 +72,7 @@ QVariantMap QOpenAI::post(const QString &suffix, const QString &data, const QStr
 
 QVariantMap QOpenAI::get(const QString &suffix, const QString &data)
 {
-    return makeRequest(suffix, data.toUtf8());
+    return makeRequest(suffix, data.toUtf8(), "", QNetworkAccessManager::GetOperation);
 }
 
 QVariantMap QOpenAI::post(const QString &suffix, const QVariantMap &json, const QString &contentType)

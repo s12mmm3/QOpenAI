@@ -93,7 +93,11 @@ public:
     void setBeta(const QString& beta);
 
     template<typename T>
-    QVariantMap makeRequest(const QString& suffix, const T& data, const QString& contentType = "")
+    QVariantMap makeRequest(const QString& suffix,
+                            const T& data,
+                            const QString& contentType = "",
+                            QNetworkAccessManager::Operation method = QNetworkAccessManager::PostOperation
+                            )
     {
         auto complete_url = base_url + suffix;
         QNetworkRequest request(complete_url);
@@ -110,7 +114,13 @@ public:
         {
             request.setRawHeader("OpenAI-Beta", beta_.toUtf8());
         }
-        QNetworkReply *reply = manager->post(request, data);
+        QNetworkReply* reply;
+        if (method == QNetworkAccessManager::PostOperation) {
+            reply = manager->post(request, data);
+        }
+        else {
+            reply = manager->get(request);
+        }
         QEventLoop loop;
         QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
         loop.exec();

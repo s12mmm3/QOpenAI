@@ -42,6 +42,7 @@ function(create_test test_name)
 endfunction()
 
 set(test_name_list
+    model
     chat
     image
     audio
